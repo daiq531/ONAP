@@ -1,42 +1,76 @@
 tosca_definitions_version: tosca_simple_yaml_1_0
 metadata:
-  template_name: vSTC
+  template_name: STCv
   template_version: "1.0"
-  template_author: qiang.dai
+  template_author: onap
   VNFD_SCHEMA_VERSION: "2.5.1+1"
-description: vSTC
+description: STCv
 
 imports:
   - onap_dm.yaml
 
+node_types:
+  onap.stcv:
+    derived_from: tosca.nodes.nfv.VNF
+    properties:
+      descriptor_id:
+        type: string
+        constraints: [ valid_values: [ 5bf43799-207a-48f0-94b8-13006cce6a7b ] ]
+        default: 5bf43799-207a-48f0-94b8-13006cce6a7b
+      provider:
+        type: string
+        constraints: [ valid_values: [ onap ] ]
+        default: onap
+      product_name:
+        type: string
+        constraints: [ valid_values: [ spirent_stcv ] ]
+        default: vcpe_vgw
+      software_version:
+        type: string
+        constraints: [ valid_values: [ '5.03' ] ]
+        default: '1.0'
+      descriptor_version:
+        type: string
+        constraints: [ valid_values: [ '1.0' ] ]
+        default: '1.0'
+      flavour_id:
+        type: string
+        constraints: [ valid_values: [ simple ] ]  #only one and only allowed one DF in this example
+        default: simple
+      flavour_description:
+        type: string
+        default: ""
+      vnfm_info:
+        type: list
+        entry_schema:
+          type: string
+        default: ['gvnfm']
+    requirements:
+      - virtual_link_mgmt:
+          capability: tosca.capabilities.nfv.VirtualLinkable
+          relationship: tosca.relationships.nfv.VirtualLinksTo
+          occurrences: [ 0, 1 ]
+      - virtual_link_test:
+          capability: tosca.capabilities.nfv.VirtualLinkable
+          relationship: tosca.relationships.nfv.VirtualLinksTo
+          occurrences: [ 0, 1 ]
+
 topology_template:
-  #substitution_mappings:
-  #  node_type: onap.vcpe_vgw
-  #  requirements:
-  #    virtual_link: [ Cp_vgw_public, virtual_link ] # expose as external CP
-  #    virtual_link: [ Cp_vgw_onap_private, virtual_link ] # expose as external CP
+  substitution_mappings:
+    node_type: onap.stcv
+    requirements:
+      virtual_link_mgmt: [ Cp_stcv_mgmt, virtual_link ] # expose as external CP
+      virtual_link_test: [ Cp_stcv_test, virtual_link ] # expose as external CP
 
   inputs:
-    vcpe_image_name:
+    stcv_image_name:
       type: string
-      description: image name for vcpe in openstack glance
-      default: ubuntu_16.04
+      description: image name for stcv in openstack glance
+      default: STCv_5.03
     public_net_id:
       type: string
       description: public network id used during onap installation
       default: external
-    onap_private_net_id:
-      type: string
-      description: onap OAM network id
-      default: oam_onap
-    onap_private_net_cidr:
-      type: string
-      description: oanp OAM network cidr
-      default: 10.0.0.0/16
-    mux_gw_private_net_id:
-      type: string
-      description: Private network that connects vGMUX to vGWs
-      default: zdfw1muxgw01_private
     stcv_test_net_id:
       type: string
       description: Private network that connects to DUT
@@ -44,79 +78,27 @@ topology_template:
     stcv_mgmt_net_id:
       type: string
       description: Private network that connects to DUT
-      default: zdfw1muxgw01_private
+      default: external
     stcv_mgmt_net_cidr:
       type: string
-      description: he CIDR of the vGMUX private network
+      description: the CIDR of management network
       default: 10.5.0.0/24
-    mux_gw_private_net_cidr:
-      type: string
-      description: he CIDR of the vGMUX private network
-      default: 10.5.0.0/24
-    cpe_public_net_id:
-      type: string
-      description: cpe public net name
-      default: zdfw1cpe01_public
-    cpe_public_net_cidr:
-      type: string
-      description: cpe public net cidr
-      default: 10.2.0.0/24
-    vgw_private_ip_0:
-      type: string
-      description: Private IP address that is assigned to the vGW to communicate with vGMUX
-      default: 10.5.0.21
-    vgw_private_ip_1:
-      type: string
-      description: Private IP address that is assigned to the vGW to communicate with ONAP components
-      default: 10.0.101.30
-    vgw_private_ip_2:
-      type: string
-      description: Private IP address that is assigned to the vGW to communicate with vCPE public network
-      default: 10.2.0.3
     stcv_name_0:
       type: string
       description: Name of the STCv
-      default: zdcpe1cpe01gw01
-    dcae_collector_ip:
-      type: string
-      description: dcae collector ip
-      default: 10.0.4.102
-    dcae_collector_port:
-      type: string
-      description: dcae collector port
-      default: "8080"
-    pub_key:
-      type: string
-      description: ssh public key
-      default: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGx6SKrAuCz1V8KGevZueksLdWoPWJP6z3r29Z7TmPVEOjM+7PIPeSs2BVRx3rnHZBAlasMrZ+fJBS25ts9vfC+ItezQah/hr9vrkmwxCR54Lb84poW+sToPeF6i5eZY7W+jWJfLaFSFx9d2vp4zes/fOlT3NvYCXbn/3QdryQoGl7VFI8oemZypVcikZXElJeeKgAVdSwnrzuqtO/tmbXcAeSbYvVjki8ywYcsWMVMYWUWhh+1BAB6kXnTsIWqzrq0Pfvy+81WDwtiqsqmd93HY8hE0scBrXFBZzQS/AYfIFBlEuFNdLczchntjbZ0n7dmDXk8zHtCZYNk7kwb8k/
-    nexus_artifact_repo:
-      type: string
-      description: Root URL for the Nexus repository for Maven artifacts
-      default: https://nexus.onap.org
+      default: stcv01
     demo_artifacts_version:
       type: string
       description: artifacts version used in demo vnfs
       default: 1.2.0
-    install_script_version:
-      type: string
-      description: install script version number
-      default: 1.2.0-SNAPSHOT
     cloud_env:
       type: string
       description: cloud environment(openstack or rackspace)
       default: openstack
-    mux_ip_addr:
-      type: string
-      description: IP address of vGMUX
-      default: 10.5.0.20
-    vg_vgmux_tunnel_vni:
-      type: string
-      description: vni value of vG-vGMUX vxlan tunnel
-      default: "100"
     vnf_id:
       type: string
       description: The VNF ID is provided by ONAP
-      default: vCPE_Infrastructure_GW_demo_app
+      default: stcv
     vf_module_id:
       type: string
       description: The vCPE Module ID is provided by ONAP
@@ -124,58 +106,16 @@ topology_template:
 
   node_templates:
     STCV_VNF:
-      type: tosca.nodes.nfv.VNF
+      type: onap.stcv
       properties:
         descriptor_id: 5bf43799-207a-48f0-94b8-13006cce6a7b
         provider: spirent
         product_name: stcv
-        software_version: '1.0'
+        software_version: '5.03'
         descriptor_version: '1.0'
         flavour_id: simple
         flavour_description: simple
         vnfm_info: ['gvnfm']
-
-#    #Private network that connects vGMUX to vGWs
-#    VL_stcv_test_net:
-#      type: tosca.nodes.nfv.VnfVirtualLink
-#      properties:
-#        connectivity_type:
-#          layer_protocols: [ipv4]
-#        vl_profile:
-#          max_bitrate_requirements:
-#            root: 10000000
-#            leaf: 10000000
-#          min_bitrate_requirements:
-#            root: 10000000
-#            leaf: 10000000
-#          virtual_link_protocol_data:
-#            - associated_layer_protocol: ipv4
-#              l3_protocol_data:
-#                name: { get_input: stcv_test_net_id }
-#                ip_version: ipv4
-#                cidr: { get_input: mux_gw_private_net_cidr }
-#                dhcp_enabled: false
-#
-#    #cpe public network
-#    VL_stcv_mgmt:
-#      type: tosca.nodes.nfv.VnfVirtualLink
-#      properties:
-#        connectivity_type:
-#          layer_protocols: [ipv4]
-#        vl_profile:
-#          max_bitrate_requirements:
-#            root: 10000000
-#            leaf: 10000000
-#          min_bitrate_requirements:
-#            root: 10000000
-#            leaf: 10000000
-#          virtual_link_protocol_data:
-#            - associated_layer_protocol: ipv4
-#              l3_protocol_data:
-#                name: { get_input: stcv_mgmt_net_id }
-#                ip_version: ipv4
-#                cidr: { get_input: stcv_mgmt_net_cidr }
-#                dhcp_enabled: false
 
     Cp_stcv_test:
       type: tosca.nodes.nfv.VduCp
@@ -189,11 +129,8 @@ topology_template:
                 l3_address_data:
                   ip_address_assignment: false
                   floating_ip_activated: false
-                  fixed_ip_address:
-                    - { get_input: vgw_private_ip_2 }
       requirements:
         - virtual_binding: VDU_STC
-        - virtual_link: VL_stcv_test_net
 
     Cp_stcv_mgmt:
       type: tosca.nodes.nfv.VduCp
@@ -207,29 +144,8 @@ topology_template:
                 l3_address_data:
                   ip_address_assignment: false
                   floating_ip_activated: false
-                  fixed_ip_address:
-                    - { get_input: stcv_mgmt_ip }
       requirements:
         - virtual_binding: VDU_STC
-        - virtual_link: VL_stcv_mgmt
-
-    ExtCp_stcv_mgmt:
-      type: tosca.nodes.nfv.VnfExtCp
-      properties:
-        layer_protocols: [ipv4]
-        trunk_mode: false
-        protocol:
-          - associated_layer_protocol: ipv4
-            address_data:
-              - address_type: ip_address
-                l3_address_data:
-                  ip_address_assignment: false
-                  floating_ip_activated: false
-                  fixed_ip_address:
-                    - { get_input: stcv_mgmt_ip }
-      requirements:
-        - external_virtual_link: { get_input: }
-        - internal_virtual_link:
 
     VDU_STC:
       type: tosca.nodes.nfv.Vdu.Compute
@@ -252,6 +168,5 @@ topology_template:
               - size_of_storage: 40 GB
       artifacts:
         sw_image: #TODO need to put glance image name here
-          file: { get_input: vcpe_image_name }
-          #file: ../Artifacts/Deployment/OTHER/
+          file: { get_input: stcv_image_name }
           type: tosca.artifacts.nfv.SwImage
