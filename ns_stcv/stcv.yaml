@@ -56,13 +56,13 @@ node_types:
           relationship: tosca.relationships.nfv.VirtualLinksTo
           occurrences: [ 0, 1 ]
 
-  onap.dut:
+  onap.openwrt:
     derived_from: tosca.nodes.nfv.VNF
     properties:
       descriptor_id:
         type: string
-        constraints: [ valid_values: [ 66811c3f-1c8c-4698-8a0e-ec6698061a89 ] ]
-        default: 66811c3f-1c8c-4698-8a0e-ec6698061a89
+        constraints: [ valid_values: [ 877e079a-3fdf-4c14-987d-e1f1f1a19f57 ] ]
+        default: 877e079a-3fdf-4c14-987d-e1f1f1a19f57
       provider:
         type: string
         constraints: [ valid_values: [ onap ] ]
@@ -112,7 +112,7 @@ topology_template:
       properties:
         descriptor_id: 5bf43799-207a-48f0-94b8-13006cce6a7b
         provider: onap
-        product_name: vcpe_vgw
+        product_name: stcv
         software_version: '1.0'
         descriptor_version: '1.0'
         flavour_id: simple
@@ -127,7 +127,7 @@ topology_template:
       properties:
         descriptor_id: 5bf43799-207a-48f0-94b8-13006cce6a7b
         provider: onap
-        product_name: vcpe_vgw
+        product_name: stcv
         software_version: '1.0'
         descriptor_version: '1.0'
         flavour_id: simple
@@ -138,9 +138,9 @@ topology_template:
         - virtual_link_test: east_test_net
 
     dut:
-      type: onap.dut
+      type: onap.openwrt
       properties:
-        descriptor_id: 66811c3f-1c8c-4698-8a0e-ec6698061a89
+        descriptor_id: 877e079a-3fdf-4c14-987d-e1f1f1a19f57
         provider: onap
         product_name: vcpe_vgw
         software_version: '1.0'

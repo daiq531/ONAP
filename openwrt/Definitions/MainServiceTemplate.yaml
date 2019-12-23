@@ -1,0 +1,196 @@
+tosca_definitions_version: tosca_simple_yaml_1_0
+metadata:
+  template_name: OpenWRT
+  template_version: "1.0"
+  template_author: onap
+  VNFD_SCHEMA_VERSION: "2.5.1+1"
+description: OpenWRT
+
+imports:
+  - onap_dm.yaml
+
+node_types:
+  onap.openwrt:
+    derived_from: tosca.nodes.nfv.VNF
+    properties:
+      descriptor_id:
+        type: string
+        constraints: [ valid_values: [ 877e079a-3fdf-4c14-987d-e1f1f1a19f57 ] ]
+        default: 877e079a-3fdf-4c14-987d-e1f1f1a19f57
+      provider:
+        type: string
+        constraints: [ valid_values: [ onap ] ]
+        default: onap
+      product_name:
+        type: string
+        constraints: [ valid_values: [ spirent_stcv ] ]
+        default: vcpe_vgw
+      software_version:
+        type: string
+        constraints: [ valid_values: [ '1.0' ] ]
+        default: '1.0'
+      descriptor_version:
+        type: string
+        constraints: [ valid_values: [ '1.0' ] ]
+        default: '1.0'
+      flavour_id:
+        type: string
+        constraints: [ valid_values: [ simple ] ]  #only one and only allowed one DF in this example
+        default: simple
+      flavour_description:
+        type: string
+        default: ""
+      vnfm_info:
+        type: list
+        entry_schema:
+          type: string
+        default: ['gvnfm']
+    requirements:
+      - virtual_link_mgmt:
+          capability: tosca.capabilities.nfv.VirtualLinkable
+          relationship: tosca.relationships.nfv.VirtualLinksTo
+          occurrences: [ 0, 1 ]
+      - virtual_link_west:
+          capability: tosca.capabilities.nfv.VirtualLinkable
+          relationship: tosca.relationships.nfv.VirtualLinksTo
+          occurrences: [ 0, 1 ]
+      - virtual_link_east:
+          capability: tosca.capabilities.nfv.VirtualLinkable
+          relationship: tosca.relationships.nfv.VirtualLinksTo
+          occurrences: [ 0, 1 ]
+
+topology_template:
+  substitution_mappings:
+    node_type: onap.openwrt
+    requirements:
+      virtual_link_mgmt: [ Cp_openwrt_mgmt, virtual_link ] # expose as external CP
+      virtual_link_west: [ Cp_openwrt_west, virtual_link ] # expose as external CP
+      virtual_link_east: [ Cp_openwrt_east, virtual_link ] # expose as external CP
+
+  inputs:
+    openwrt_image_name:
+      type: string
+      description: image name for stcv in openstack glance
+      default: STCv_5.03
+    public_net_id:
+      type: string
+      description: public network id used during onap installation
+      default: external
+    openwrt_west_net_id:
+      type: string
+      description: Private network that connects to DUT
+      default: zdfw1muxgw01_private
+    openwrt_east_net_id:
+      type: string
+      description: Private network that connects to DUT
+      default: zdfw1muxgw01_private
+    openwrt_mgmt_net_id:
+      type: string
+      description: Private network that connects to DUT
+      default: external
+    openwrt_mgmt_net_cidr:
+      type: string
+      description: the CIDR of management network
+      default: 10.5.0.0/24
+    openwrt_name:
+      type: string
+      description: Name of the Openwrt
+      default: stcv01
+    demo_artifacts_version:
+      type: string
+      description: artifacts version used in demo vnfs
+      default: 1.2.0
+    cloud_env:
+      type: string
+      description: cloud environment(openstack or rackspace)
+      default: openstack
+    vnf_id:
+      type: string
+      description: The VNF ID is provided by ONAP
+      default: stcv
+    vf_module_id:
+      type: string
+      description: The vCPE Module ID is provided by ONAP
+      default: vCPE_Customer_GW
+
+  node_templates:
+    OpenWRT_VNF:
+      type: onap.openwrt
+      properties:
+        descriptor_id: 877e079a-3fdf-4c14-987d-e1f1f1a19f57
+        provider: spirent
+        product_name: stcv
+        software_version: '5.03'
+        descriptor_version: '1.0'
+        flavour_id: simple
+        flavour_description: simple
+        vnfm_info: ['gvnfm']
+
+    Cp_openwrt_west:
+      type: tosca.nodes.nfv.VduCp
+      properties:
+        layer_protocols: [ipv4]
+        trunk_mode: false
+        protocol:
+          - associated_layer_protocol: ipv4
+            address_data:
+              - address_type: ip_address
+                l3_address_data:
+                  ip_address_assignment: false
+                  floating_ip_activated: false
+      requirements:
+        - virtual_binding: VDU_OpenWRT
+
+    Cp_openwrt_east:
+      type: tosca.nodes.nfv.VduCp
+      properties:
+        layer_protocols: [ipv4]
+        trunk_mode: false
+        protocol:
+          - associated_layer_protocol: ipv4
+            address_data:
+              - address_type: ip_address
+                l3_address_data:
+                  ip_address_assignment: false
+                  floating_ip_activated: false
+      requirements:
+        - virtual_binding: VDU_OpenWRT
+
+    Cp_openwrt_mgmt:
+      type: tosca.nodes.nfv.VduCp
+      properties:
+        layer_protocols: [ipv4]
+        trunk_mode: false
+        protocol:
+          - associated_layer_protocol: ipv4
+            address_data:
+              - address_type: ip_address
+                l3_address_data:
+                  ip_address_assignment: false
+                  floating_ip_activated: false
+      requirements:
+        - virtual_binding: VDU_OpenWRT
+
+    VDU_OpenWRT:
+      type: tosca.nodes.nfv.Vdu.Compute
+      properties:
+        name: { get_input: openwrt_name }
+        description: stcv
+        vdu_profile:
+          min_number_of_instances: 1
+          max_number_of_instances: 2
+          watchdog: none
+      capabilities:
+        virtual_compute:
+          properties:
+            virtual_memory:
+              virtual_mem_size: 4096 MB
+            virtual_cpu:
+              num_virtual_cpu: 2
+              cpu_architecture: generic
+            virtual_local_storage:
+              - size_of_storage: 40 GB
+      artifacts:
+        sw_image: #TODO need to put glance image name here
+          file: { get_input: openwrt_image_name }
+          type: tosca.artifacts.nfv.SwImage
