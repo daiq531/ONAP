@@ -24,7 +24,7 @@ node_types:
       product_name:
         type: string
         constraints: [ valid_values: [ spirent_stcv ] ]
-        default: vcpe_vgw
+        default: spirent_stcv
       software_version:
         type: string
         constraints: [ valid_values: [ '5.03' ] ]

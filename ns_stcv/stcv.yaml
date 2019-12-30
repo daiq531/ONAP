@@ -25,7 +25,7 @@ node_types:
       product_name:
         type: string
         constraints: [ valid_values: [ stcv ] ]
-        default: vcpe_vgw
+        default: stcv
       software_version:
         type: string
         constraints: [ valid_values: [ '5.03' ] ]
@@ -166,8 +166,8 @@ topology_template:
           min_bit_rate_requirements:
             root: 10000000
             leaf: 10000000
-          networkName: oam_onap
-          cidr: 10.0.0.0/16
+          networkName: external
+          cidr: 192.168.235.0/24
           dhcpEnabled: true
 
     west_test_net:
