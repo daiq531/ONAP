@@ -192,5 +192,6 @@ topology_template:
               - size_of_storage: 40 GB
       artifacts:
         sw_image: #TODO need to put glance image name here
-          file: { get_input: openwrt_image_name }
+          # file: { get_input: openwrt_image_name }
+          file: ../Artifacts/Deployment/OTHER/OpenWRT_Spirent
           type: tosca.artifacts.nfv.SwImage

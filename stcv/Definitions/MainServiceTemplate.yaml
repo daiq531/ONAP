@@ -168,5 +168,6 @@ topology_template:
               - size_of_storage: 40 GB
       artifacts:
         sw_image: #TODO need to put glance image name here
-          file: { get_input: stcv_image_name }
+          # file: { get_input: stcv_image_name }
+          file: ../Artifacts/Deployment/OTHER/STCv_5.03
           type: tosca.artifacts.nfv.SwImage
