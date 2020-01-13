@@ -13,13 +13,15 @@
 
 from onap import ONAP
 from simple_traffic import SimpleTrafficTest
-from stc_demo_ns import DemoSTCNS
+from stc_demo_ns import STCDemoNS
+
+labserver_ip = ""
 
 def main():
     onap = ONAP(base_url="http://192.168.235.41:30280")
     onap.setup()
 
-    ns = DemoSTCNS(onap)
+    ns = STCDemoNS(onap)
     params = {
         "auth_url": "http://mosel.set.calenglab.spirentcom.com:5000/v3/",
         "username": "qiang.dai",
@@ -33,7 +35,8 @@ def main():
     }
     ns.set_openstack_client(params)
 
-    ns.intantiate()
+    ns_pkg_id = ""
+    ns.instantiate(ns_pkg_id)
     ns.wait_vnf_ready()
 
     test = SimpleTrafficTest(labserver_ip=labserver_ip,

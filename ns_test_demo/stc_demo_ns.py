@@ -11,6 +11,9 @@
 #
 ##############################################################################
 
+import logging
+import sys
+
 import openstack
 
 logger = logging.getLogger(__name__)
@@ -18,7 +21,7 @@ handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(hdlr=handler)
 logger.setLevel(logging.DEBUG)
 
-import openstack
+
 params = {
     "auth_url": "http://mosel.set.calenglab.spirentcom.com:5000/v3/",
     "username": "qiang.dai",
@@ -78,15 +81,15 @@ class STCDemoNS(object):
 
     @property
     def stcv_east_test_port_ip(self):
-        return _stcv_east_test_port_ip
+        return self._stcv_east_test_port_ip
 
     @property
     def dut_left_ip(self):
-        return _dut_left_ip
+        return self._dut_left_ip
 
     @property
     def dut_right_ip(self):
-        return _dut_right_ip
+        return self._dut_right_ip
 
     def set_openstack_client(self, params):
         try:
@@ -100,13 +103,18 @@ class STCDemoNS(object):
 
     def instantiate(self, ns_pkg_id):
         vnfd_id_list = []
-        # get vnfd id list according to ns_pkg_id
 
-        self.ns_instance_id = self.onap.create_ns(ns_name="qdai_demostcns",
-                            ns_desc="",
+        # get vnfd id list according to ns_pkg_id
+        vnf_pkg_id_list = self.onap.get_vnf_pkg_id_list(ns_pkg_id)
+        for pkg_id in vnf_pkg_id_list:
+            vnfd_id = self.onap.get_vnfd_id(pkg_id)
+            vnfd_id_list.append(vnfd_id)
+
+        ns_instance_id = self.onap.create_ns(ns_name="qdai_demostcns",
+                            ns_desc="demo ns by qdai",
                             ns_pkg_id=ns_pkg_id,
-                            service_type="",
-                            customer_name="")
+                            service_type="vCPE1",       # TODO: should be changed into new service type
+                            customer_name="hpa_cust1")  # TODO: should be changed into new customer
         ns_instance_jod_id = self.onap.instantiate_ns(ns_instance_id, vnfd_id_list=vnfd_id_list)
         self.onap.waitProcessFinished(ns_instance_id, ns_instance_jod_id, "instantiate")
 
@@ -129,7 +137,7 @@ class STCDemoNS(object):
 
     def terminate(self):
         ns_instance_jod_id = self.onap.terminate_ns(self.ns_instance_id)
-        self.onap.waitProcessFinished(ns_instance_id, ns_instance_jod_id, "instantiate")
+        self.onap.waitProcessFinished(self.ns_instance_id, ns_instance_jod_id, "terminate")
 
         self.ns_instance_id = None
         return
@@ -141,7 +149,7 @@ class STCDemoNS(object):
         # get server id from ns instance
         server_id = self.onap.get_server_id(self.ns_instance_id, self.stc_west_instance_name)
 
-        server = self.os_client.get_server(server_id)
+        server = self.openstack_client.get_server(server_id)
         server_name = server.name
         mgmt_ip = server.addresses[self.mgmt_net_name]["addr"]
         test_port_ip = server.addresses[self.west_test_net_name]["addr"]
@@ -158,7 +166,7 @@ class STCDemoNS(object):
         # get server id from ns instance
         server_id = self.onap.get_server_id(self.ns_instance_id, self.stc_east_instance_name)
 
-        server = self.os_client.get_server(server_id)
+        server = self.openstack_client.get_server(server_id)
         server_name = server.name
         mgmt_ip = server.addresses[self.mgmt_net_name]["addr"]
         test_port_ip = server.addresses[self.east_test_net_name]["addr"]
@@ -175,7 +183,7 @@ class STCDemoNS(object):
         # get server id from ns instance
         server_id = self.onap.get_server_id(self.ns_instance_id, self.openwrt_instance_name)
 
-        server = self.os_client.get_server(server_id)
+        server = self.openstack_client.get_server(server_id)
         server_name = server.name
         mgmt_ip = server.addresses[self.mgmt_net_name]["addr"]
         left_port_ip = server.addresses[self.west_test_net_name]["addr"]

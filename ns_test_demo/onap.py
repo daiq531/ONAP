@@ -15,6 +15,9 @@ import requests
 import logging
 import json
 import sys
+import os
+import time
+import uuid
 
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
@@ -24,7 +27,7 @@ logger.setLevel(logging.DEBUG)
 class ONAP(object):
 
     def __init__(self, base_url):
-        self.base_url = "http://192.168.235.41:30280"
+        self.base_url = base_url
         self.aai_header = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -34,7 +37,7 @@ class ONAP(object):
             "Authorization": "Basic QUFJOkFBSQ=="
         }
         self.pkg_path = ""
-        pass
+        return
 
     def create_complex(self):
         self.complex_version = None
@@ -157,6 +160,11 @@ class ONAP(object):
         os.system(service_delete_string)
         print("delete service type--successful")
         self.service_type_version = None
+
+    def show_service_types(self):
+        service_type_list_url = self.base_url + "/aai/v11/service-design-and-creation/services"
+        resp = requests.get(url=service_type_list_url, headers=self.aai_header, verify=False)
+        logger.info("service types: \n %s" % json.dumps(resp.json(), indent=2))
 
     def create_customer(self):
         self.customer_version = None
@@ -337,10 +345,10 @@ class ONAP(object):
     def create_ns_package(self, userDefinedData):
         ns_url = self.base_url + "/api/nsd/v1/ns_descriptors"
         ns_headers = {'content-type': 'application/json', 'accept': 'application/json'}
-        ns_data = {'userDefinedData': {ns.get("key"): ns.get("value")}}
+        ns_data = {'userDefinedData': userDefinedData}
         resp = requests.post(ns_url, data=json.dumps(ns_data), headers=ns_headers)
         ns_pkg_id = None
-        if 201 == ns_package_reps.status_code:
+        if 201 == resp.status_code:
             logger.debug("create ns package resp: \n %s" % json.dumps(resp.json(), indent=2))
             ns_pkg_id = resp.json()["id"]
             logger.info("create ns package successful, ns_pkg_id = %s" % ns_pkg_id)
@@ -371,6 +379,12 @@ class ONAP(object):
                 time.sleep(1)
         ns_file.close()
         return
+
+    def get_vnf_pkg_id_list(self, ns_pkg_id):
+        url = self.base_url + "/api/nsd/v1/ns_descriptors/" + ns_pkg_id
+        headers = {'content-type': 'application/json', 'accept': 'application/json'}
+        resp = requests.get(url, headers=headers)
+        return resp.json()["vnfPkgIds"]
 
     def show_ns_package(self, ns_pkg_id=None):
         if ns_pkg_id:
@@ -423,7 +437,7 @@ class ONAP(object):
         instance_url = self.base_url + "/api/nslcm/v1/ns/" + ns_instance_id + "/instantiate"
         resp = requests.post(instance_url, data=json.dumps(data), headers=header)
         ns_instance_jod_id = None
-        if 200 == instance_resp.status_code:
+        if 200 == resp.status_code:
             logger.debug("instantiate ns resp: \n %s" % json.dumps(resp.json(), indent=2))
             ns_instance_jod_id = resp.json().get("jobId")
             logger.info("Instantiate ns successfully, the job id is %s" % ns_instance_jod_id)
@@ -433,18 +447,30 @@ class ONAP(object):
         return ns_instance_jod_id
 
     def terminate_ns(self, ns_instance_id):
-        print("Terminate ns--beginning")
         ns_url = self.base_url + "/api/nslcm/v1/ns/%s" % ns_instance_id
         d = {
             "gracefulTerminationTimeout": 600,
             "terminationType": "FORCEFUL"
         }
         resp = requests.post(url=ns_url + "/terminate", data=d)
-        self.assertEqual(202, resp.status_code)
-        terminate_ns_job_id = res.json()["jobId"]
+        logger.debug("terminate response: \n %s" % json.dumps(resp.json(), indent=2))
+        assert 202 == resp.status_code
+
+        terminate_ns_job_id = resp.json()["jobId"]
         logger.info("Terminate job is %s" % terminate_ns_job_id)
-        self.waitProcessFinished(terminate_ns_job_id, "terminate")
+        resp = self.waitProcessFinished(ns_instance_id, terminate_ns_job_id, "terminate")
+        logger.debug("wait terminate response: \n %s" % json.dumps(resp.json(), indent=2))
+
         return
+
+    def delete_ns(self, ns_instance_id):
+        logger.info("Delete ns %s --beginning" % ns_instance_id)
+        ns_url = self.base_url + "/api/nslcm/v1/ns/%s" % ns_instance_id
+        res = requests.delete(ns_url)
+        if 204 == res.status_code:
+            logger.info("Ns %s delete successfully." % ns_instance_id)
+        else:
+            logger.info("Ns %s delete fail." % ns_instance_id)
 
     def waitProcessFinished(self, ns_instance_id, job_id, action):
         job_url = self.base_url + "/api/nslcm/v1/jobs/%s" % job_id
@@ -483,17 +509,17 @@ class ONAP(object):
             ns_instance = [x for x in resp.json() if x["nsInstanceId"] == ns_instance_id][0]
             logger.info("ns instance %s info: \n %s" % (ns_instance_id, json.dumps(ns_instance, indent=2)))
         else:
-            logger.info("ns info: \n %s" % json.dumps(resp.json(), indent=2))
+            logger.info("ns info: num = %d\n %s" % (len(resp.json()), json.dumps(resp.json(), indent=2)))
 
     def show_vnf_instance(self, vnf_instance_id=None):
         vnf_aai_url = self.base_url + "/aai/v11/network/generic-vnfs"
         resp = requests.get(url=vnf_aai_url, headers=self.aai_header, verify=False)
         vnf_list = resp.json()["generic-vnf"]
-        if vnf_list and not vnf_instance_id:
+        if vnf_list and vnf_instance_id:
             vnf_instance = [x for x in vnf_list if x["vnf-id"] == vnf_instance_id][0]
-            logger.info("vnf instance %s info: \n %s" %(vnf_instance_id, json.dumps(vnf_resp.json(), indent=2)))
+            logger.info("vnf instance %s info: \n %s" %(vnf_instance_id, json.dumps(vnf_instance, indent=2)))
         else:
-            logger.info("vnf info: \n %s" % str(vnf_list))
+            logger.info("vnf info: num = %d \n %s" % (len(vnf_list), json.dumps(vnf_list, indent=2)))
 
     # def show_vnf_instance(self, vnf_instance_id=None):
     #     if vnf_instance_id:
@@ -507,12 +533,6 @@ class ONAP(object):
     #         logger.info("vnf instance %s info: \n %s" %(vnf_instance_id, json.dumps(vnf_resp.json(), indent=2)))
     #     else:
     #         logger.info("vnf info: \n %s" % str(vnf_list))
-
-
-    def show_service_types(self):
-        service_type_list_url = self.base_url + "/aai/v11/service-design-and-creation/services"
-        resp = requests.get(url=service_type_list_url, headers=self.aai_header, verify=False)
-        logger.info("service types: \n %s" % json.dumps(complex_list_response.json(), indent=2))
 
     def get_server_id(self, ns_instance_id, instance_name):
         headers = {
@@ -539,6 +559,9 @@ if __name__  == "__main__":
     #onap.show_vnf_instance(vnf_instance_id="24a8d085-7711-49bf-a27c-dc2779b05793")
 
     onap.show_ns_instance()
+
+    onap.terminate_ns(ns_instance_id="88d307e2-35ce-4cb2-a924-a5fc23b6a844")
+    onap.delete_ns("88d307e2-35ce-4cb2-a924-a5fc23b6a844")
 
     exit(0)
 
@@ -575,8 +598,8 @@ if __name__  == "__main__":
     #vfc.get_complexes()
     #vfc.get_cloud_regions()
     onap.get_ns_info()
-    vfc.get_vnfs()
+    onap.get_vnfs()
     print("vserver_info")
-    vfc.get_vserver()
+    onap.get_vserver()
 
 
