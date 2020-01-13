@@ -138,6 +138,7 @@ class STCDemoNS(object):
     def terminate(self):
         ns_instance_jod_id = self.onap.terminate_ns(self.ns_instance_id)
         self.onap.waitProcessFinished(self.ns_instance_id, ns_instance_jod_id, "terminate")
+        self.onap.delete_ns(self.ns_instance_id)
 
         self.ns_instance_id = None
         return

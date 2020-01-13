@@ -73,7 +73,8 @@ class ONAP(object):
     def show_complexes(self):
         complex_url = self.base_url + "/aai/v11/cloud-infrastructure/complexes"
         resp = requests.get(url=complex_url, headers=self.aai_header, verify=False)
-        logger.info("complexes: \n %s" % json.dumps(resp.json(), indent=2))
+        complex = resp.json()["complex"]
+        logger.info("%d complexes: \n %s" % (len(complex), json.dumps(complex, indent=2)))
 
     def register_cloud(self, cloud_region, values):
         print("Create Cloud--beginning")
@@ -134,7 +135,8 @@ class ONAP(object):
     def show_cloud_regions(self):
         cloud_url = self.base_url + "/aai/v11/cloud-infrastructure/cloud-regions"
         resp = requests.get(url=cloud_url, headers=self.aai_header, verify=False)
-        logger.info("cloud regions: total number %d \n %s" % (len(resp.json()), json.dumps(resp.json(), indent=2)))
+        cloud_region = resp.json()["cloud-region"]
+        logger.info("%d cloud regions: \n %s" % (len(cloud_region), json.dumps(cloud_region, indent=2)))
 
     def create_service_type(self):
         self.service_type_version = None
