@@ -15,7 +15,7 @@ from onap import ONAP
 from simple_traffic import SimpleTrafficTest
 from stc_demo_ns import STCDemoNS
 
-labserver_ip = ""
+labserver_ip = "192.168.235.98"
 
 def main():
     onap = ONAP(base_url="http://192.168.235.41:30280")
@@ -33,9 +33,20 @@ def main():
         "region": "RegionOne",
         "verify": False
     }
+    params = {
+        "auth_url": "http://192.168.235.2:5000/v3",
+        "username": "admin",
+        "password": "Onap@10086",
+        "identity_api_version": "v3",
+        "project_name": "admin",
+        "project_domain_name": "Default",
+        "user_domain_name": "default",
+        "region": "RegionOne",
+        "verify": False
+    }
     ns.set_openstack_client(params)
 
-    ns_pkg_id = ""
+    ns_pkg_id = "1501c031-e1ff-41ab-9aaf-c11103f883e3"
     ns.instantiate(ns_pkg_id)
     ns.wait_vnf_ready()
 

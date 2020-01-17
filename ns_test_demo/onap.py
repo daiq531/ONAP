@@ -460,8 +460,8 @@ class ONAP(object):
 
         terminate_ns_job_id = resp.json()["jobId"]
         logger.info("Terminate job is %s" % terminate_ns_job_id)
-        resp = self.waitProcessFinished(ns_instance_id, terminate_ns_job_id, "terminate")
-        logger.debug("wait terminate response: \n %s" % json.dumps(resp.json(), indent=2))
+        self.waitProcessFinished(ns_instance_id, terminate_ns_job_id, "terminate")
+        # logger.debug("wait terminate response: \n %s" % json.dumps(resp.json(), indent=2))
 
         return
 
@@ -562,7 +562,7 @@ if __name__  == "__main__":
 
     onap.show_ns_instance()
 
-    onap.terminate_ns(ns_instance_id="88d307e2-35ce-4cb2-a924-a5fc23b6a844")
+    #onap.terminate_ns(ns_instance_id="88d307e2-35ce-4cb2-a924-a5fc23b6a844")
     onap.delete_ns("88d307e2-35ce-4cb2-a924-a5fc23b6a844")
 
     exit(0)
