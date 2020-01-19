@@ -11,9 +11,18 @@
 #
 ##############################################################################
 
+import logging
+import sys
+
 from onap import ONAP
 from simple_traffic import SimpleTrafficTest
 from stc_demo_ns import STCDemoNS
+
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(sys.stdout)
+logger.addHandler(hdlr=handler)
+logger.setLevel(logging.DEBUG)
+logger.propagate=True
 
 labserver_ip = "192.168.235.98"
 
@@ -23,26 +32,16 @@ def main():
 
     ns = STCDemoNS(onap)
     params = {
-        "auth_url": "http://mosel.set.calenglab.spirentcom.com:5000/v3/",
-        "username": "qiang.dai",
-        "password": "spirent",
-        "identity_api_version": "v3",
-        "project_name": "qiang.dai",
-        "project_domain_name": "Default",
-        "user_domain_name": "default",
-        "region": "RegionOne",
-        "verify": False
-    }
-    params = {
         "auth_url": "http://192.168.235.2:5000/v3",
         "username": "admin",
         "password": "Onap@10086",
-        "identity_api_version": "v3",
-        "project_name": "admin",
-        "project_domain_name": "Default",
-        "user_domain_name": "default",
+        "identity_api_version": "3",
+        "project_id": "8e6e4267c13240fc81d75bf18f8b59c0",
+        "project_domain_id": "default",
+        "user_domain_name": "Default",
         "region": "RegionOne",
-        "verify": False
+        "verify": False,
+        "auth_type": "password"
     }
     ns.set_openstack_client(params)
 

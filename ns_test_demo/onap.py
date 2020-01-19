@@ -498,7 +498,7 @@ class ONAP(object):
     def get_vserver(self):
         vserver_url = self.base_url + "/aai/v11/cloud-infrastructure/cloud-regions/cloud-region/VCPE22/RegionOne/tenants/tenant/f7b17b0afd374d48a322e95cf4258eec/vservers/vserver/9147a63a-dc03-4546-a885-38e7bad438fa"
         resp = requests.get(url=vserver_url, headers=self.aai_header, verify=False)
-        print json.dumps(resp.json(), indent=2)
+        logger.info(json.dumps(resp.json(), indent=2))
 
     def show_ns_instance(self, ns_instance_id=None):
         headers = {

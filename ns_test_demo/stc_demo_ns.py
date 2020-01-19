@@ -17,26 +17,23 @@ import sys
 import openstack
 
 logger = logging.getLogger(__name__)
-handler = logging.StreamHandler(sys.stdout)
-logger.addHandler(hdlr=handler)
-logger.setLevel(logging.DEBUG)
 
 
-params = {
-    "auth_url": "http://mosel.set.calenglab.spirentcom.com:5000/v3/",
-    "username": "qiang.dai",
-    "password": "spirent",
-    "identity_api_version": "v3",
-    "project_name": "qiang.dai",
-    "project_domain_name": "Default",
-    "user_domain_name": "default",
-    "region": "RegionOne",
-    "verify": False
-}
-cli = openstack.connect(**params)
-cli.authorize()
-
-server = cli.get_server("049eb491-04c2-467f-8916-9e1b9d176611")
+# params = {
+#     "auth_url": "http://mosel.set.calenglab.spirentcom.com:5000/v3/",
+#     "username": "qiang.dai",
+#     "password": "spirent",
+#     "identity_api_version": "v3",
+#     "project_name": "qiang.dai",
+#     "project_domain_name": "Default",
+#     "user_domain_name": "default",
+#     "region": "RegionOne",
+#     "verify": False
+# }
+# cli = openstack.connect(**params)
+# cli.authorize()
+#
+# server = cli.get_server("049eb491-04c2-467f-8916-9e1b9d176611")
 
 #>>> server.addresses
 #Munch({u'vnflcv-right': [{u'OS-EXT-IPS-MAC:mac_addr': u'fa:16:3e:bf:6a:a7', u'version': 4, u'addr': u'192.168.20.98', u'OS-EXT-IPS:type': u'fixed'}], u'public': [{u'OS-EXT-IPS-MAC:mac_addr': u'fa:16:3e:d8:2e:8a', u'version': 6, u'addr': u'fd00:a6d:b800::3f3', u'OS-EXT-IPS:type': u'fixed'}, {u'OS-EXT-IPS-MAC:mac_addr': u'fa:16:3e:d8:2e:8a', u'version': 4, u'addr': u'10.109.184.201', u'OS-EXT-IPS:type': u'fixed'}], u'vnflcv-left': [{u'OS-EXT-IPS-MAC:mac_addr': u'fa:16:3e:08:2e:b7', u'version': 4, u'addr': u'192.168.10.59', u'OS-EXT-IPS:type': u'fixed'}]})
@@ -97,8 +94,9 @@ class STCDemoNS(object):
             client.authorize()
         except Exception as e:
             logger.error(e)
-            raise STCDemoNSError()
+            raise STCDemoNSError("create openstack client fail.")
 
+        # server = client.get_server(name_or_id="ubuntu1604")
         self.openstack_client = client
 
     def instantiate(self, ns_pkg_id):
