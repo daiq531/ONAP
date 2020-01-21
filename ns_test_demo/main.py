@@ -45,7 +45,7 @@ def main():
     }
     ns.set_openstack_client(params)
 
-    ns_pkg_id = "1501c031-e1ff-41ab-9aaf-c11103f883e3"
+    ns_pkg_id = "4c32c96c-3224-43c5-ae7c-cdc6e97d949d"
     ns.instantiate(ns_pkg_id)
     ns.wait_vnf_ready()
 
@@ -56,7 +56,7 @@ def main():
                                 stcv_east_test_port_ip=ns.stcv_east_test_port_ip,
                                 dut_left_ip=ns.dut_left_ip,
                                 dut_right_ip=ns.dut_right_ip)
-    test.run()
+    test.run(port_rate=10, duration=60)
     test.show_result()
 
     ns.terminate()

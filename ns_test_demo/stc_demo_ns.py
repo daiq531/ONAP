@@ -13,6 +13,7 @@
 
 import logging
 import sys
+import time
 
 import openstack
 
@@ -44,10 +45,10 @@ class STCDemoNSError(Exception):
 class STCDemoNS(object):
 
     # following parameters must be align with the csar package
-    stc_west_instance_name = "stc_west"
-    stc_east_instance_name = "stc_east"
+    stc_west_instance_name = "stcv_west"
+    stc_east_instance_name = "stcv_east"
     openwrt_instance_name = "dut"
-    mgmt_net_name = "mgmt_net"
+    mgmt_net_name = "external"
     west_test_net_name = "west_net"
     east_test_net_name = "east_net"
 
@@ -113,8 +114,11 @@ class STCDemoNS(object):
                             ns_pkg_id=ns_pkg_id,
                             service_type="vCPE1",       # TODO: should be changed into new service type
                             customer_name="hpa_cust1")  # TODO: should be changed into new customer
-        ns_instance_jod_id = self.onap.instantiate_ns(ns_instance_id, vnfd_id_list=vnfd_id_list)
-        self.onap.waitProcessFinished(ns_instance_id, ns_instance_jod_id, "instantiate")
+        try:
+            ns_instance_jod_id = self.onap.instantiate_ns(ns_instance_id, vnfd_id_list=vnfd_id_list)
+            self.onap.waitProcessFinished(ns_instance_id, ns_instance_jod_id, "instantiate")
+        except Exception as e:
+            self.onap.delete_ns(ns_instance_id)
 
         logger.info("instantiate ns success. ")
         self.ns_instance_id = ns_instance_id
@@ -134,24 +138,23 @@ class STCDemoNS(object):
         return
 
     def terminate(self):
-        ns_instance_jod_id = self.onap.terminate_ns(self.ns_instance_id)
-        self.onap.waitProcessFinished(self.ns_instance_id, ns_instance_jod_id, "terminate")
+        self.onap.terminate_ns(self.ns_instance_id)
         self.onap.delete_ns(self.ns_instance_id)
-
         self.ns_instance_id = None
         return
 
     def wait_vnf_ready(self):
+        time.sleep(10)
         return
 
     def get_stc_west_instance_info(self):
         # get server id from ns instance
-        server_id = self.onap.get_server_id(self.ns_instance_id, self.stc_west_instance_name)
-
+        vnfid = self.onap.get_vnfid(self.ns_instance_id, self.stc_west_instance_name)
+        server_id = self.onap.get_server_ids(vnfid)[0]
         server = self.openstack_client.get_server(server_id)
         server_name = server.name
-        mgmt_ip = server.addresses[self.mgmt_net_name]["addr"]
-        test_port_ip = server.addresses[self.west_test_net_name]["addr"]
+        mgmt_ip = server.addresses[self.mgmt_net_name][0]["addr"]
+        test_port_ip = server.addresses[self.west_test_net_name][0]["addr"]
         instance_info = {
             "name": server_name,
             "id": server_id,
@@ -163,12 +166,12 @@ class STCDemoNS(object):
 
     def get_stc_east_instance_info(self):
         # get server id from ns instance
-        server_id = self.onap.get_server_id(self.ns_instance_id, self.stc_east_instance_name)
-
+        vnfid = self.onap.get_vnfid(self.ns_instance_id, self.stc_east_instance_name)
+        server_id = self.onap.get_server_ids(vnfid)[0]
         server = self.openstack_client.get_server(server_id)
         server_name = server.name
-        mgmt_ip = server.addresses[self.mgmt_net_name]["addr"]
-        test_port_ip = server.addresses[self.east_test_net_name]["addr"]
+        mgmt_ip = server.addresses[self.mgmt_net_name][0]["addr"]
+        test_port_ip = server.addresses[self.east_test_net_name][0]["addr"]
         instance_info = {
             "name": server_name,
             "id": server_id,
@@ -180,13 +183,13 @@ class STCDemoNS(object):
 
     def get_dut_instance_info(self):
         # get server id from ns instance
-        server_id = self.onap.get_server_id(self.ns_instance_id, self.openwrt_instance_name)
-
+        vnfid = self.onap.get_vnfid(self.ns_instance_id, self.openwrt_instance_name)
+        server_id = self.onap.get_server_ids(vnfid)[0]
         server = self.openstack_client.get_server(server_id)
         server_name = server.name
-        mgmt_ip = server.addresses[self.mgmt_net_name]["addr"]
-        left_port_ip = server.addresses[self.west_test_net_name]["addr"]
-        right_port_ip = server.addresses[self.east_test_net_name]["addr"]
+        mgmt_ip = server.addresses[self.mgmt_net_name][0]["addr"]
+        left_port_ip = server.addresses[self.west_test_net_name][0]["addr"]
+        right_port_ip = server.addresses[self.east_test_net_name][0]["addr"]
         instance_info = {
             "name": server_name,
             "id": server_id,

@@ -24,6 +24,9 @@ handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(hdlr=handler)
 logger.setLevel(logging.DEBUG)
 
+class ONAPError(Exception):
+    pass
+
 class ONAP(object):
 
     def __init__(self, base_url):
@@ -425,7 +428,7 @@ class ONAP(object):
             {
                 "vnfProfileId": x,
                 "locationConstraints": {
-                    "vimId": "VCPE22_RegionOne"     # self.config_params["location"]
+                    "vimId": "STC_RegionOne"     # self.config_params["location"]
                 }
             } for x in vnfd_id_list ]
         data = {
@@ -444,7 +447,8 @@ class ONAP(object):
             ns_instance_jod_id = resp.json().get("jobId")
             logger.info("Instantiate ns successfully, the job id is %s" % ns_instance_jod_id)
         else:
-            logger.error("Instantiate ns failed.")
+            logger.error("Instantiate ns failed. status_code: %d, error info: %s" % (resp.status_code, resp.content["error"]))
+            raise ONAPError("Instantiate ns error")
 
         return ns_instance_jod_id
 
@@ -536,18 +540,33 @@ class ONAP(object):
     #     else:
     #         logger.info("vnf info: \n %s" % str(vnf_list))
 
-    def get_server_id(self, ns_instance_id, instance_name):
+    def get_vnfid(self, ns_instance_id, vnf_name):
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json"
         }
         url = self.base_url + "/api/nslcm/v1/ns/" + ns_instance_id
         resp = requests.get(url, headers=headers, verify=False)
-        vnfinfo = [x for x in resp.json()["vnfInfo"] if x["vnfProfileId"]==instance_name][0]
+        vnfinfo = [x for x in resp.json()["vnfInfo"] if x["vnfProfileId"]==vnf_name][0]
         if vnfinfo:
             return vnfinfo["vnfInstanceId"]
         else:
             return None
+
+    def get_server_ids(self, vnfid):
+        vnf_aai_url = self.base_url + "/aai/v11/network/generic-vnfs"
+        resp = requests.get(url=vnf_aai_url, headers=self.aai_header, verify=False)
+        vnf_list = resp.json()["generic-vnf"]
+        vnf_instance = [x for x in vnf_list if x["vnf-id"] == vnfid][0]
+        logger.info("vnf instance %s info: \n %s" %(vnfid, json.dumps(vnf_instance, indent=2)))
+        vserver_relationships = [x for x in vnf_instance["relationship-list"]["relationship"] if x["related-to"] == "vserver"]
+        server_ids = []
+        for vr in vserver_relationships:
+            for data in vr["relationship-data"]:
+                if data["relationship-key"] == "vserver.vserver-id":
+                    server_ids.append(data["relationship-value"])
+
+        return server_ids
 
     def setup(self):
         return

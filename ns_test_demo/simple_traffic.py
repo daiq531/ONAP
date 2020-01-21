@@ -247,7 +247,7 @@ class SimpleTrafficTest(object):
         self.collect_result(self.west_stcv)
         self.collect_result(self.east_stcv)
 
-        self.show_result()
+        #self.show_result()
 
         return
 
