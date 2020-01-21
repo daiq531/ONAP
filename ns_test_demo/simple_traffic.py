@@ -70,7 +70,7 @@ class SimpleTrafficTest(object):
 
         return
 
-    def __del__(self):
+    def end_session(self):
         self.stc.disconnectall()
         sess_list = self.stc.sessions()
         for sess_id in sess_list:
@@ -247,7 +247,7 @@ class SimpleTrafficTest(object):
         self.collect_result(self.west_stcv)
         self.collect_result(self.east_stcv)
 
-        #self.show_result()
+        self.end_session()
 
         return
 
